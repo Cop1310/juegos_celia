@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Mis juegos</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#1F4E79">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;-moz-user-select:none;user-select:none;-webkit-touch-callout:none}
+input,textarea{-webkit-user-select:text;-moz-user-select:text;user-select:text}
+html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#FFF8E7;color:#1b1b1b;font-family:Roboto,"Helvetica Neue",Arial,sans-serif;touch-action:manipulation;overscroll-behavior:none}
+#app{position:absolute;top:0;left:0;right:0;bottom:0;overflow:hidden}
+.screen{position:absolute;top:0;left:0;right:0;bottom:0;padding:2vh 3vw}
+
+/* Menú */
+.h1{font-size:10vh;font-weight:bold;text-align:center;color:#1F4E79;margin:3vh 0 4vh}
+.bigbtn{display:block;width:76%;height:26vh;margin:0 auto 4vh;font-size:8vh;font-weight:bold;color:#fff;background:#1F4E79;border:0;border-radius:28px;box-shadow:0 8px 0 #12304d;font-family:inherit}
+.bigbtn:active{box-shadow:0 2px 0 #12304d;-webkit-transform:translateY(6px);transform:translateY(6px)}
+.bigbtn.small{height:16vh;font-size:6vh;width:60%}
+#gear{position:absolute;right:12px;bottom:12px;width:70px;height:70px;line-height:70px;text-align:center;font-size:36px;opacity:.18;color:#555}
+
+/* Barra superior y mensajes */
+.top{display:-webkit-flex;display:flex;align-items:center;height:12vh;min-height:64px}
+.back{height:100%;font-size:4.5vh;font-weight:bold;padding:0 3vw;border:3px solid #1F4E79;border-radius:16px;background:#fff;color:#1F4E79;font-family:inherit}
+.ttl{font-size:5.5vh;font-weight:bold;margin-left:3vw;color:#1F4E79}
+#msg{height:8vh;line-height:8vh;font-size:5vh;text-align:center;font-weight:bold;color:#1b5e20}
+
+/* Parejas */
+.card{display:inline-block;position:relative;vertical-align:top;border-radius:18px;overflow:hidden;border:6px solid #1F4E79;background:#fff}
+.card .back{position:absolute;top:0;left:0;right:0;bottom:0;height:auto;border:0;border-radius:0;padding:0;background:#1F4E79;color:#fff;text-align:center;font-weight:bold}
+.card .front{position:absolute;top:0;left:0;right:0;bottom:0;display:none;text-align:center;background:#fff}
+.card.up .back,.card.done .back{display:none}
+.card.up .front,.card.done .front{display:block}
+.card.done{border-color:#2E7D32}
+.card.hint{border-color:#E65100;-webkit-animation:pulse 1s infinite;animation:pulse 1s infinite}
+@-webkit-keyframes pulse{50%{opacity:.5}}
+@keyframes pulse{50%{opacity:.5}}
+.front img{width:100%;height:100%;object-fit:cover;object-position:center 25%}
+.front .lab{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.65);color:#fff;font-weight:bold;padding:2px 4px}
+
+/* Sopa de letras */
+#ws.land{display:-webkit-flex;display:flex;align-items:flex-start;justify-content:center}
+#ws.land #wl{margin-left:3vw;width:34%}
+#ws.port #wl{text-align:center;margin-top:2vh}
+#grid{-webkit-flex:none;flex:none}
+.row{white-space:nowrap;font-size:0}
+.cell{display:inline-block;margin:2px;text-align:center;font-weight:bold;background:#fff;border:2px solid #1F4E79;color:#1b1b1b;border-radius:8px;vertical-align:top}
+.cell.sel{background:#FFE082}
+.cell.found{background:#A5D6A7;border-color:#2E7D32}
+.cell.hint{background:#FFB74D}
+.lbl{font-size:3.2vh;color:#555;margin-bottom:1vh}
+.w{font-weight:bold;background:#fff;border:3px solid #1F4E79;border-radius:14px;padding:1.2vh 2vw;margin:1vh 0;color:#1F4E79}
+.w.ok{background:#A5D6A7;border-color:#2E7D32;color:#1b5e20}
+
+/* Final de partida */
+.ov{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(255,248,231,.97);z-index:10;text-align:center;padding-top:12vh}
+.ov .big{font-size:9vh;font-weight:bold;color:#1b5e20;margin-bottom:7vh;padding:0 4vw}
+
+/* Panel de ajustes (solo para quien configura) */
+.adm{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 24px 80px;font-size:18px}
+.adm h2{color:#1F4E79;margin:28px 0 8px;font-size:24px}
+.ahead{display:-webkit-flex;display:flex;align-items:center;margin-bottom:8px}
+.atitle{font-size:26px;font-weight:bold;margin-left:16px}
+.adm .back{height:56px;font-size:20px;padding:0 20px}
+.abtn{font-size:18px;padding:10px 16px;border:2px solid #1F4E79;background:#fff;color:#1F4E79;border-radius:10px;font-family:inherit}
+.abtn.red{border-color:#b71c1c;color:#b71c1c}
+.box{background:#fff;border:2px solid #ccc;border-radius:12px;padding:16px;margin-top:12px}
+.prow{display:-webkit-flex;display:flex;align-items:center;background:#fff;border:1px solid #ccc;border-radius:12px;padding:8px;margin-top:8px}
+.prow img{width:80px;height:80px;object-fit:cover;border-radius:8px}
+.pn{-webkit-flex:1;flex:1;margin:0 16px;font-size:20px}
+#pprev{display:none;width:120px;height:120px;object-fit:cover;vertical-align:middle;border-radius:8px;margin-left:12px}
+input[type=text],textarea,select{font-size:18px;padding:8px;border:2px solid #999;border-radius:8px;font-family:inherit}
+input[type=text]{width:320px;max-width:90%}
+textarea{width:100%;max-width:520px}
+.small{font-size:16px;color:#555}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(function(){
+'use strict';
+
+var app=document.getElementById('app');
+var DEFAULT_WORDS=['CASA','PAN','VINO','MESA','SOL','FLOR','GATO','PERRO','PLAZA','HUERTO','CAMPO','LECHE','AGUA','PUEBLO'];
+var EMOJIS=['\uD83C\uDF4E','\uD83C\uDF50','\uD83C\uDF4C','\uD83C\uDF47','\uD83C\uDF52','\uD83C\uDF3B','\uD83D\uDC14','\uD83D\uDC11','\uD83D\uDC34','\u2615','\uD83C\uDFE0','\uD83C\uDF33'];
+var data=null,cur=null,timers=[],lw=0,lh=0;
+
+/* ---------- utilidades ---------- */
+function el(tag,cls,html){var e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+function clear(){app.innerHTML=''}
+function later(fn,ms){var t=setTimeout(fn,ms);timers.push(t);return t}
+function clearTimers(){while(timers.length)clearTimeout(timers.pop())}
+function go(f){clearTimers();cur=f;lw=app.clientWidth;lh=app.clientHeight;f()}
+function toInt(v){return parseInt(v,10)}
+function byId(id){return document.getElementById(id)}
+
+var msgT=null;
+function msg(t,ms){var m=byId('msg');if(!m)return;m.innerHTML=t;if(msgT)clearTimeout(msgT);msgT=later(function(){m.innerHTML=''},ms||1800)}
+
+function overlay(text,buttons){
+  var o=el('div','ov');
+  o.innerHTML='<div class="big">'+text+'</div>';
+  buttons.forEach(function(b){var x=el('button','bigbtn small',b.t);x.onclick=b.f;o.appendChild(x)});
+  app.appendChild(o);
+}
+
+function cleanWord(s){
+  s=String(s||'').toUpperCase().replace(/[\u00C1\u00C0\u00C2\u00C4]/g,'A').replace(/[\u00C9\u00C8\u00CA\u00CB]/g,'E').replace(/[\u00CD\u00CC\u00CE\u00CF]/g,'I').replace(/[\u00D3\u00D2\u00D4\u00D6]/g,'O').replace(/[\u00DA\u00D9\u00DB\u00DC]/g,'U');
+  return s.replace(/[^A-Z\u00D1]/g,'');
+}
+function cleanList(arr){var out=[],seen={};for(var i=0;i<arr.length;i++){var w=cleanWord(arr[i]);if(w&&!seen[w]){seen[w]=1;out.push(w)}}return out}
+
+/* ---------- almacenamiento (IndexedDB, con localStorage de reserva) ---------- */
+var DB='juegos-madre',KEY='data';
+function idb(cb){
+  try{
+    var r=indexedDB.open(DB,1);
+    r.onupgradeneeded=function(){r.result.createObjectStore('kv')};
+    r.onsuccess=function(){cb(r.result)};
+    r.onerror=function(){cb(null)};
+    r.onblocked=function(){cb(null)};
+  }catch(e){cb(null)}
+}
+function fromLS(){try{var s=localStorage.getItem(KEY);return s?JSON.parse(s):null}catch(e){return null}}
+function toLS(){try{localStorage.setItem(KEY,JSON.stringify(data))}catch(e){alert('No se ha podido guardar. Puede que falte espacio en la tablet.')}}
+function norm(d){
+  var base={people:[],words:DEFAULT_WORDS.slice(),settings:{pairs:3,showNames:true,preview:3,grid:6,wpg:3}};
+  if(!d||typeof d!=='object')return base;
+  if(d.people&&d.people.length!==undefined)base.people=d.people;
+  if(d.words&&d.words.length!==undefined)base.words=d.words;
+  var s=d.settings||{};
+  for(var k in base.settings){if(s[k]!==undefined)base.settings[k]=s[k]}
+  return base;
+}
+function loadData(cb){
+  idb(function(db){
+    if(!db){cb(norm(fromLS()));return}
+    try{
+      var rq=db.transaction('kv','readonly').objectStore('kv').get(KEY);
+      rq.onsuccess=function(){cb(norm(rq.result||fromLS()))};
+      rq.onerror=function(){cb(norm(fromLS()))};
+    }catch(e){cb(norm(fromLS()))}
+  });
+}
+function saveData(cb){
+  idb(function(db){
+    if(!db){toLS();if(cb)cb();return}
+    try{
+      var tx=db.transaction('kv','readwrite');
+      tx.objectStore('kv').put(data,KEY);
+      tx.oncomplete=function(){if(cb)cb()};
+      tx.onerror=tx.onabort=function(){toLS();if(cb)cb()};
+    }catch(e){toLS();if(cb)cb()}
+  });
+}
+
+/* ---------- menú ---------- */
+function home(){
+  clear();
+  var s=el('div','screen');
+  s.innerHTML='<div class="h1">Mis juegos</div>'+
+    '<button class="bigbtn" id="b1">\uD83C\uDCCF Parejas</button>'+
+    '<button class="bigbtn" id="b2">\uD83D\uDD24 Sopa de letras</button>'+
+    '<div id="gear">\u2699</div>';
+  app.appendChild(s);
+  byId('b1').onclick=function(){go(pairs)};
+  byId('b2').onclick=function(){go(wordsearch)};
+  // El panel de ajustes se abre manteniendo pulsado el engranaje 2,5 s
+  var g=byId('gear'),t=null;
+  function stop(){if(t){clearTimeout(t);t=null}}
+  function start(){stop();t=setTimeout(function(){t=null;go(admin)},2500)}
+  g.addEventListener('touchstart',start);
+  g.addEventListener('touchend',stop);
+  g.addEventListener('touchcancel',stop);
+  g.addEventListener('touchmove',stop);
+  g.addEventListener('mousedown',start);
+  g.addEventListener('mouseup',stop);
+  g.addEventListener('mouseleave',stop);
+}
+
+function topbar(title){
+  return '<div class="top"><button class="back" id="back">\u2190 Men\u00FA</button><div class="ttl">'+title+'</div></div><div id="msg"></div>';
+}
+
+/* ---------- PAREJAS ---------- */
+function pairs(){
+  clear();
+  var st=data.settings,i,pool=[];
+  for(i=0;i<data.people.length;i++){
+    var p=data.people[i];
+    if(p.photo)pool.push({id:'p'+i,img:p.photo,label:p.name});
+  }
+  if(pool.length<2){pool=[];for(i=0;i<EMOJIS.length;i++)pool.push({id:'e'+i,emoji:EMOJIS[i]})}
+  var n=Math.max(2,Math.min(toInt(st.pairs)||3,6,pool.length));
+  var chosen=shuffle(pool).slice(0,n),cards=[];
+  for(i=0;i<chosen.length;i++){cards.push({c:chosen[i]});cards.push({c:chosen[i]})}
+  cards=shuffle(cards);
+  var total=cards.length;
+  var lay={4:[2,2],6:[3,2],8:[4,2],10:[5,2],12:[4,3]}[total]||[4,3];
+  var cols=lay[0],rows=lay[1];
+
+  var s=el('div','screen');
+  s.innerHTML=topbar('Parejas')+'<div id="board"></div>';
+  app.appendChild(s);
+  byId('back').onclick=function(){go(home)};
+
+  var W=app.clientWidth,H=app.clientHeight,M=10;
+  var availH=H*0.76,availW=W*0.94;
+  var size=Math.floor(Math.min((availW-cols*2*M)/cols,(availH-rows*2*M)/rows));
+  size=Math.max(80,Math.min(size,360));
+  var board=byId('board');
+  board.style.width=(cols*(size+2*M))+'px';
+  board.style.margin='0 auto';
+
+  var nodes=[];
+  function setC(i,cls){nodes[i].className='card '+cls}
+  for(i=0;i<total;i++){
+    (function(i){
+      var c=cards[i].c,d=el('div','card down');
+      d.style.width=d.style.height=size+'px';
+      d.style.margin=M+'px';
+      d.setAttribute('data-k',c.id);
+      var inner=size-12,back,front;
+      back='<div class="back" style="font-size:'+Math.round(size*0.5)+'px;line-height:'+inner+'px">?</div>';
+      if(c.img){
+        front='<div class="front"><img src="'+c.img+'" alt="">'+
+          (st.showNames&&c.label?'<div class="lab" style="font-size:'+Math.max(16,Math.round(size*0.13))+'px">'+esc(c.label)+'</div>':'')+'</div>';
+      }else{
+        front='<div class="front" style="font-size:'+Math.round(size*0.55)+'px;line-height:'+inner+'px">'+c.emoji+'</div>';
+      }
+      d.innerHTML=back+front;
+      d.onclick=function(){onCard(i)};
+      board.appendChild(d);
+      nodes.push(d);
+    })(i);
+  }
+
+  var open=[],lock=false,matched=0,fails=0;
+
+  function hint(a){
+    var k=cards[a].c.id,j;
+    for(j=0;j<total;j++){if(cards[j].c.id===k&&!cards[j].done&&!cards[j].up)setC(j,'down hint')}
+    later(function(){for(var j=0;j<total;j++){if(!cards[j].done&&!cards[j].up)setC(j,'down')}},2600);
+  }
+
+  function onCard(i){
+    var cd=cards[i];
+    if(lock||cd.done||cd.up)return;
+    cd.up=true;setC(i,'up');
+    open.push(i);
+    if(open.length<2)return;
+    lock=true;
+    var a=open[0],b=open[1];
+    if(cards[a].c.id===cards[b].c.id){
+      later(function(){
+        cards[a].done=cards[b].done=true;
+        setC(a,'done');setC(b,'done');
+        open=[];lock=false;fails=0;matched++;
+        msg('\u00A1Muy bien!',1500);
+        if(matched===n){
+          later(function(){overlay('\u00A1Lo has hecho muy bien! \uD83C\uDF89',[
+            {t:'Otra vez',f:function(){go(pairs)}},
+            {t:'Volver al men\u00FA',f:function(){go(home)}}
+          ])},900);
+        }
+      },700);
+    }else{
+      fails++;
+      later(function(){
+        cards[a].up=cards[b].up=false;
+        setC(a,'down');setC(b,'down');
+        open=[];lock=false;
+        if(fails>=2){fails=0;hint(a)}
+      },1600);
+    }
+  }
+
+  var pv=toInt(st.preview)||0;
+  if(pv>0){
+    lock=true;
+    for(i=0;i<total;i++){cards[i].up=true;setC(i,'up')}
+    msg('Mira bien las cartas',pv*1000);
+    later(function(){
+      for(var j=0;j<total;j++){cards[j].up=false;setC(j,'down')}
+      lock=false;
+      msg('Ahora busca las parejas',2500);
+    },pv*1000);
+  }
+}
+
+/* ---------- SOPA DE LETRAS ---------- */
+var FILL='AAEEEIOOUSRNDLTCMPBGVHFQJZ';
+function makeGrid(N,list){
+  var g=[],place={},i,j,k,w;
+  for(i=0;i<N;i++){g.push([]);for(j=0;j<N;j++)g[i].push('')}
+  var order=list.slice().sort(function(a,b){return b.length-a.length});
+  for(w=0;w<order.length;w++){
+    var word=order[w],placed=false,t;
+    for(t=0;t<200&&!placed;t++){
+      var dir=Math.random()<0.5?'H':'V';
+      var maxr=dir==='V'?N-word.length:N-1,maxc=dir==='H'?N-word.length:N-1;
+      var r=Math.floor(Math.random()*(maxr+1)),c=Math.floor(Math.random()*(maxc+1));
+      var ok=true,rr,cc;
+      for(k=0;k<word.length;k++){
+        rr=dir==='V'?r+k:r;cc=dir==='H'?c+k:c;
+        if(g[rr][cc]!==''){ok=false;break}
+      }
+      if(ok){
+        for(k=0;k<word.length;k++){
+          rr=dir==='V'?r+k:r;cc=dir==='H'?c+k:c;
+          g[rr][cc]=word.charAt(k);
+        }
+        place[word]={r:r,c:c,dir:dir};placed=true;
+      }
+    }
+    if(!placed)return null;
+  }
+  for(i=0;i<N;i++)for(j=0;j<N;j++)if(g[i][j]==='')g[i][j]=FILL.charAt(Math.floor(Math.random()*FILL.length));
+  return {g:g,place:place};
+}
+
+function wordsearch(){
+  clear();
+  var st=data.settings;
+  var N=Math.max(5,Math.min(toInt(st.grid)||6,8)),WPG=Math.max(2,Math.min(toInt(st.wpg)||3,5));
+  function okw(w){return w.length>=3&&w.length<=N}
+  var pool=cleanList(data.words).filter(okw);
+  if(pool.length<2)pool=cleanList(DEFAULT_WORDS).filter(okw);
+  var res=null,tries=0,want=Math.min(WPG,pool.length),list=[];
+  while(!res&&tries<300){
+    if(tries>0&&tries%60===0&&want>2)want--;
+    list=shuffle(pool).slice(0,want);
+    res=makeGrid(N,list);tries++;
+  }
+  if(!res){go(home);return}
+  var g=res.g,place=res.place;
+
+  var W=app.clientWidth,H=app.clientHeight,land=W>H*1.1;
+  var s=el('div','screen');
+  s.innerHTML=topbar('Sopa de letras')+'<div id="ws" class="'+(land?'land':'port')+'"><div id="grid"></div><div id="wl"><div class="lbl">Busca estas palabras:</div></div></div>';
+  app.appendChild(s);
+  byId('back').onclick=function(){go(home)};
+
+  var cs;
+  if(land)cs=Math.floor(Math.min((W*0.56)/N,(H*0.76)/N))-4;
+  else cs=Math.floor(Math.min((W*0.92)/N,(H*0.76*0.62)/N))-4;
+  cs=Math.max(40,Math.min(cs,120));
+  var wf=Math.round(H*(land?0.06:0.04));
+
+  var grid=byId('grid'),cellN=[],flags=[],r,c;
+  for(r=0;r<N;r++){
+    var row=el('div','row');cellN[r]=[];flags[r]=[];
+    for(c=0;c<N;c++){
+      var d=el('div','cell',g[r][c]);
+      d.style.width=d.style.height=cs+'px';
+      d.style.lineHeight=(cs-4)+'px';
+      d.style.fontSize=Math.round(cs*0.58)+'px';
+      d.setAttribute('data-r',r);d.setAttribute('data-c',c);
+      row.appendChild(d);cellN[r][c]=d;flags[r][c]={};
+    }
+    grid.appendChild(row);
+  }
+
+  var wl=byId('wl'),wordNodes={},found={},count=0,first=null;
+  list.forEach(function(w){
+    var d=el('div','w',esc(w));
+    d.style.fontSize=wf+'px';
+    d.onclick=function(){hintWord(w)};
+    wl.appendChild(d);wordNodes[w]=d;
+  });
+
+  function paint(r,c){
+    var f=flags[r][c],cl='cell';
+    if(f.s)cl+=' sel';else if(f.f)cl+=' found';else if(f.h)cl+=' hint';
+    cellN[r][c].className=cl;
+  }
+  function hintWord(w){
+    if(found[w])return;
+    var p=place[w];
+    flags[p.r][p.c].h=true;paint(p.r,p.c);
+    later(function(){flags[p.r][p.c].h=false;paint(p.r,p.c)},2500);
+  }
+  function unsel(){if(first){flags[first.r][first.c].s=false;paint(first.r,first.c);first=null}}
+
+  function tap(r,c){
+    if(!first){first={r:r,c:c};flags[r][c].s=true;paint(r,c);return}
+    if(first.r===r&&first.c===c){unsel();return}
+    if(first.r!==r&&first.c!==c){
+      unsel();first={r:r,c:c};flags[r][c].s=true;paint(r,c);
+      msg('Elige dos letras en la misma fila o columna',2200);
+      return;
+    }
+    var cells=[],i,a,b;
+    if(first.r===r){a=Math.min(first.c,c);b=Math.max(first.c,c);for(i=a;i<=b;i++)cells.push([r,i])}
+    else{a=Math.min(first.r,r);b=Math.max(first.r,r);for(i=a;i<=b;i++)cells.push([i,c])}
+    var str='';
+    for(i=0;i<cells.length;i++)str+=g[cells[i][0]][cells[i][1]];
+    var rev=str.split('').reverse().join(''),hit=null;
+    for(i=0;i<list.length;i++){var w=list[i];if(!found[w]&&(w===str||w===rev))hit=w}
+    unsel();
+    if(hit){
+      found[hit]=true;count++;
+      for(i=0;i<cells.length;i++){flags[cells[i][0]][cells[i][1]].f=true;paint(cells[i][0],cells[i][1])}
+      wordNodes[hit].className='w ok';
+      wordNodes[hit].innerHTML='\u2714 '+esc(hit);
+      msg('\u00A1Muy bien!',1500);
+      if(count===list.length){
+        later(function(){overlay('\u00A1Lo has hecho muy bien! \uD83C\uDF89',[
+          {t:'Otra sopa',f:function(){go(wordsearch)}},
+          {t:'Volver al men\u00FA',f:function(){go(home)}}
+        ])},900);
+      }
+    }else{
+      msg('Casi. Prueba otra vez',1800);
+    }
+  }
+  grid.onclick=function(e){
+    var t=e.target,r=t.getAttribute&&t.getAttribute('data-r');
+    if(r===null||r===undefined)return;
+    tap(toInt(r),toInt(t.getAttribute('data-c')));
+  };
+}
+
+/* ---------- PANEL DE AJUSTES ---------- */
+function resizeFile(file,max,cb){
+  var fr=new FileReader();
+  fr.onload=function(){
+    var im=new Image();
+    im.onload=function(){
+      var w=im.width,h=im.height,sc=Math.min(1,max/Math.max(w,h));
+      var cv=document.createElement('canvas');
+      cv.width=Math.round(w*sc);cv.height=Math.round(h*sc);
+      cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);
+      cb(cv.toDataURL('image/jpeg',0.82));
+    };
+    im.onerror=function(){cb(null)};
+    im.src=fr.result;
+  };
+  fr.onerror=function(){cb(null)};
+  fr.readAsDataURL(file);
+}
+function rotate(url,cb){
+  var im=new Image();
+  im.onload=function(){
+    var cv=document.createElement('canvas');
+    cv.width=im.height;cv.height=im.width;
+    var x=cv.getContext('2d');
+    x.translate(cv.width/2,cv.height/2);x.rotate(Math.PI/2);
+    x.drawImage(im,-im.width/2,-im.height/2);
+    cb(cv.toDataURL('image/jpeg',0.82));
+  };
+  im.src=url;
+}
+function selHtml(id,label,opts,curv){
+  var o='',i;
+  for(i=0;i<opts.length;i++)o+='<option value="'+opts[i][0]+'"'+(String(opts[i][0])===String(curv)?' selected':'')+'>'+opts[i][1]+'</option>';
+  return '<p>'+label+' <select id="'+id+'">'+o+'</select></p>';
+}
+
+function admin(){
+  clear();
+  var st=data.settings;
+  var s=el('div','screen adm');
+  var h='';
+  h+='<div class="ahead"><button class="back" id="back">\u2190 Volver</button><span class="atitle">Panel de ajustes</span></div>';
+  h+='<h2>Personas y fotos</h2><div id="plist"></div>';
+  h+='<div class="box"><b>A\u00F1adir persona</b><br><br><input type="file" id="pfile" accept="image/*"> <img id="pprev" alt=""><br><br>'+
+     'Nombre (como lo dice ella): <input id="pname" type="text"><br><br>'+
+     'Parentesco (respecto a ella): <input id="prel" type="text"><br><br>'+
+     '<button class="abtn" id="padd">A\u00F1adir</button> <span id="pmsg"></span></div>';
+  h+='<h2>Palabras de la sopa de letras</h2><p class="small">Una por l\u00EDnea. Se pasan a may\u00FAsculas y sin tildes (la \u00D1 se conserva). Tienen que tener 3 letras o m\u00E1s y caber en la cuadr\u00EDcula.</p>'+
+     '<textarea id="wtxt" rows="8"></textarea><br><br><button class="abtn" id="wsave">Guardar palabras</button> <span id="wmsg"></span>';
+  h+='<h2>Ajustes</h2>';
+  h+=selHtml('s_pairs','Parejas en cada partida:',[[2,'2'],[3,'3'],[4,'4'],[5,'5'],[6,'6']],st.pairs);
+  h+=selHtml('s_prev','Ense\u00F1ar las cartas al empezar:',[[0,'No'],[3,'3 segundos'],[5,'5 segundos'],[8,'8 segundos']],st.preview);
+  h+=selHtml('s_names','Mostrar el nombre bajo cada foto:',[['1','S\u00ED'],['0','No']],st.showNames?'1':'0');
+  h+=selHtml('s_grid','Tama\u00F1o de la sopa de letras:',[[5,'5 x 5'],[6,'6 x 6'],[7,'7 x 7'],[8,'8 x 8']],st.grid);
+  h+=selHtml('s_wpg','Palabras por sopa:',[[2,'2'],[3,'3'],[4,'4'],[5,'5']],st.wpg);
+  h+='<h2>Copia de seguridad</h2><p class="small">Las fotos solo est\u00E1n en esta tablet. Si se borran los datos del navegador, se pierden. Exporta una copia de vez en cuando.</p>'+
+     '<button class="abtn" id="exp">Exportar copia</button> &nbsp; Importar: <input type="file" id="imp" accept=".json,application/json"> <span id="bmsg"></span>';
+  s.innerHTML=h;
+  app.appendChild(s);
+
+  byId('back').onclick=function(){go(home)};
+  byId('wtxt').value=data.words.join('\n');
+
+  function say(id,t){byId(id).innerHTML=t}
+
+  function drawList(){
+    var h2='',i;
+    if(!data.people.length)h2='<p class="small">A\u00FAn no hay personas. Mientras tanto, Parejas usa dibujos de ejemplo (hacen falta al menos 2 personas con foto).</p>';
+    for(i=0;i<data.people.length;i++){
+      var p=data.people[i];
+      h2+='<div class="prow"><img src="'+p.photo+'" alt=""><div class="pn"><b>'+esc(p.name)+'</b><br>'+esc(p.rel||'')+'</div>'+
+        '<button class="abtn" data-a="rot" data-i="'+i+'">\u21BB Girar</button> &nbsp; <button class="abtn red" data-a="del" data-i="'+i+'">\u2715 Borrar</button></div>';
+    }
+    byId('plist').innerHTML=h2;
+  }
+  drawList();
+  byId('plist').onclick=function(e){
+    var t=e.target,a=t.getAttribute&&t.getAttribute('data-a');
+    if(!a)return;
+    var i=toInt(t.getAttribute('data-i'));
+    if(a==='del'){
+      if(confirm('\u00BFBorrar a '+data.people[i].name+'?')){data.people.splice(i,1);saveData(drawList)}
+    }else if(a==='rot'){
+      rotate(data.people[i].photo,function(u){data.people[i].photo=u;saveData(drawList)});
+    }
+  };
+
+  var pending=null;
+  byId('pfile').onchange=function(){
+    var f=this.files&&this.files[0];
+    if(!f)return;
+    say('pmsg','Procesando\u2026');
+    resizeFile(f,700,function(u){
+      if(!u){say('pmsg','No se ha podido leer la imagen');return}
+      pending=u;
+      var pv=byId('pprev');pv.src=u;pv.style.display='inline-block';
+      say('pmsg','');
+    });
+  };
+  byId('padd').onclick=function(){
+    var n=byId('pname').value.trim();
+    if(!pending||!n){say('pmsg','Falta la foto o el nombre');return}
+    data.people.push({id:Date.now(),name:n,rel:byId('prel').value.trim(),photo:pending});
+    saveData(function(){
+      pending=null;
+      byId('pprev').style.display='none';
+      byId('pname').value='';byId('prel').value='';byId('pfile').value='';
+      drawList();say('pmsg','A\u00F1adida \u2714');
+    });
+  };
+
+  byId('wsave').onclick=function(){
+    var kept=cleanList(byId('wtxt').value.split(/[\n,;]+/)).filter(function(w){return w.length>=3});
+    data.words=kept;
+    saveData(function(){
+      var usable=kept.filter(function(w){return w.length<=toInt(data.settings.grid)}).length;
+      say('wmsg','Guardadas '+kept.length+' palabras ('+usable+' caben en la cuadr\u00EDcula actual).');
+    });
+  };
+
+  function bind(id,key,conv){byId(id).onchange=function(){data.settings[key]=conv(this.value);saveData()}}
+  bind('s_pairs','pairs',toInt);
+  bind('s_prev','preview',toInt);
+  bind('s_names','showNames',function(v){return v==='1'});
+  bind('s_grid','grid',toInt);
+  bind('s_wpg','wpg',toInt);
+
+  byId('exp').onclick=function(){
+    try{
+      var b=new Blob([JSON.stringify(data)],{type:'application/json'});
+      var u=URL.createObjectURL(b);
+      var a=document.createElement('a');
+      a.href=u;a.download='juegos-madre-copia-'+new Date().toISOString().slice(0,10)+'.json';
+      document.body.appendChild(a);a.click();
+      setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(u)},1000);
+    }catch(e){say('bmsg','No se ha podido exportar')}
+  };
+  byId('imp').onchange=function(){
+    var f=this.files&&this.files[0];
+    if(!f)return;
+    var fr=new FileReader();
+    fr.onload=function(){
+      try{
+        var d=JSON.parse(fr.result);
+        if(!d||(!d.settings&&!d.people))throw new Error('x');
+        if(!confirm('Esto sustituye todos los datos actuales. \u00BFContinuar?'))return;
+        data=norm(d);
+        saveData(function(){go(admin)});
+      }catch(e){say('bmsg','Archivo no v\u00E1lido')}
+    };
+    fr.readAsText(f);
+  };
+}
+
+/* ---------- arranque ---------- */
+var rt=null;
+window.addEventListener('resize',function(){
+  if(rt)clearTimeout(rt);
+  rt=setTimeout(function(){
+    if(!cur||cur===admin||!data)return;
+    if(Math.abs(app.clientWidth-lw)>40||Math.abs(app.clientHeight-lh)>40)go(cur);
+  },400);
+});
+if(navigator.storage&&navigator.storage.persist){try{navigator.storage.persist()}catch(e){}}
+if('serviceWorker' in navigator){try{navigator.serviceWorker.register('sw.js')}catch(e){}}
+loadData(function(d){data=d;go(home)});
+})();
+</script>
+</body>
+</html>
