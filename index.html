@@ -136,7 +136,7 @@ function cleanWord(s){
 
 /* ================= datos por defecto (genéricos, sin nada personal) ================= */
 var DEF={
-  settings:{pairs:3,preview:3,showNames:true,memo:'distintas',wpg:10,qn:10,hlevel:1},
+  settings:{pairs:3,preview:3,showNames:false,memo:'distintas',wpg:10,qn:10,hlevel:1},
   themes:[
     {name:'LA CASA',words:['CASA','MESA','SILLA','CAMA','COCINA','VENTANA','PUERTA','SOFA','LAMPARA','ARMARIO','ESPEJO','BALCON']},
     {name:'FRUTAS',words:['MANZANA','PERA','NARANJA','LIMON','UVAS','CEREZAS','PLATANO','FRESA','MELON','SANDIA','CIRUELA','MELOCOTON']}
@@ -301,7 +301,7 @@ function bestGrid(total,W,H,M){
 }
 function photoCard(src,label){
   return function(size){
-    return '<img src="'+src+'" alt="">'+((data.settings.showNames&&label)?'<div class="lab" style="font-size:'+Math.max(14,Math.round(size*0.12))+'px">'+esc(label)+'</div>':'');
+    return '<img src="'+src+'" alt="">'; /* nunca se muestra el nombre: la pareja se identifica sin ayuda */
   };
 }
 function dateCard(txt){
@@ -871,7 +871,6 @@ function admin(){
   h+=selHtml('s_pairs','Parejas en cada partida:',[[2,'2'],[3,'3'],[4,'4'],[5,'5'],[6,'6']],st.pairs);
   h+=selHtml('s_prev','Memoria: enseñar las cartas al empezar:',[[0,'No'],[3,'3 segundos'],[5,'5 segundos'],[8,'8 segundos']],st.preview);
   h+=selHtml('s_memo','Memoria: la pareja son:',[['distintas','Dos fotos distintas de la misma persona (difícil)'],['iguales','La misma foto repetida (fácil)']],st.memo);
-  h+=selHtml('s_names','Mostrar el nombre bajo cada foto:',[['1','Sí'],['0','No']],st.showNames?'1':'0');
   h+=selHtml('s_wpg','Palabras por sopa de letras:',[[3,'3'],[4,'4'],[5,'5'],[6,'6'],[7,'7'],[8,'8'],[9,'9'],[10,'10']],st.wpg);
   h+=selHtml('s_qn','Preguntas por partida:',[[5,'5'],[10,'10'],[15,'15'],[20,'20'],[60,'Todas']],st.qn);
   h+=selHtml('s_hl','Horas, nivel:',[[1,'1 - horas muy distintas'],[2,'2 - incluye la misma hora de mañana y de noche']],st.hlevel);
@@ -955,7 +954,6 @@ function admin(){
   };
   function bind(id,key,conv){byId(id).onchange=function(){data.settings[key]=conv(this.value);saveData()}}
   bind('s_pairs','pairs',toInt);bind('s_prev','preview',toInt);bind('s_memo','memo',String);
-  bind('s_names','showNames',function(v){return v==='1'});
   bind('s_wpg','wpg',toInt);bind('s_qn','qn',toInt);bind('s_hl','hlevel',toInt);
 }
 

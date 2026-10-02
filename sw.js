@@ -1,4 +1,4 @@
-var CACHE = 'juegos-madre-v2';
+var CACHE = 'juegos-madre-v3';
 var FILES = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', function (e) {
