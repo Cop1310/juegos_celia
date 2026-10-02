@@ -41,7 +41,20 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
 .card.hint{border-color:#E65100;-webkit-animation:pulse 1s infinite;animation:pulse 1s infinite}
 @-webkit-keyframes pulse{50%{opacity:.5}}
 @keyframes pulse{50%{opacity:.5}}
-.cf img{width:100%;height:100%;object-fit:cover;object-position:center 25%}
+.cf img{width:100%;height:100%;object-fit:contain;background:#fff}
+.card.done .cf img,.card.done .dc{opacity:.3}
+.card.done .cf:after{content:'\2714';position:absolute;left:0;right:0;top:50%;margin-top:-.55em;font-size:1em;line-height:1.1;color:#2E7D32;font-weight:bold;text-shadow:0 0 6px #fff,0 0 12px #fff}
+.card.wrong{border-color:#E65100}
+.qq{font-size:5vh;font-weight:bold;color:#1F4E79;text-align:center;min-height:9vh;padding:0 2vw;line-height:1.15}
+.scene{position:relative;margin:0 auto;background:#fff;border:4px solid #1F4E79;border-radius:20px;overflow:hidden;touch-action:manipulation}
+.ob{position:absolute;text-align:center;cursor:pointer;-webkit-user-select:none;user-select:none}
+.ob.found{opacity:.28}
+.ob.found:after{content:'\2714';position:absolute;left:0;right:0;top:0;font-size:.8em;color:#2E7D32;font-weight:bold;text-shadow:0 0 4px #fff,0 0 8px #fff}
+.ob.hint{-webkit-animation:pulse .7s infinite;animation:pulse .7s infinite;background:#FFE0B2;border-radius:50%}
+.dwrap{box-sizing:border-box;position:relative;display:inline-block;border:4px solid #1F4E79;border-radius:12px;overflow:hidden;vertical-align:top;margin:6px 4px;background:#fff}
+.dwrap img{display:block;width:100%;height:auto}
+.dwrap svg{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
+.dpulse{-webkit-animation:pulse .7s infinite;animation:pulse .7s infinite}
 .cf .lab{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.65);color:#fff;font-weight:bold;padding:2px 4px}
 .dc{height:100%;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(#FFF3E0,#FFCCBC);color:#BF360C;text-align:center}
 
@@ -136,7 +149,7 @@ function cleanWord(s){
 
 /* ================= datos por defecto (genéricos, sin nada personal) ================= */
 var DEF={
-  settings:{v:4,pairs:6,preview:3,showNames:false,memo:'distintas',wpg:10,qn:10,hlevel:1},
+  settings:{v:5,pairs:6,objpic:'1',preview:3,showNames:false,memo:'distintas',wpg:10,qn:10,hlevel:1},
   themes:[
     {name:'LA CASA',words:['CASA','MESA','SILLA','CAMA','COCINA','VENTANA','PUERTA','SOFA','LAMPARA','ARMARIO','ESPEJO','BALCON']},
     {name:'FRUTAS',words:['MANZANA','PERA','NARANJA','LIMON','UVAS','CEREZAS','PLATANO','FRESA','MELON','SANDIA','CIRUELA','MELOCOTON']}
@@ -157,7 +170,7 @@ function slotList(v){if(!v)return [];if(typeof v==='string')return [v];var o=[],
 function curList(p){return p.photos[0].concat(p.photos[1])}
 function rnd(a){return a[Math.floor(Math.random()*a.length)]}
 function norm(d){
-  var o={people:[],questions:DEF.questions.slice(),themes:DEF.themes.slice(),routine:DEF.routine.slice(),settings:{}},k;
+  var o={diffs:[],people:[],questions:DEF.questions.slice(),themes:DEF.themes.slice(),routine:DEF.routine.slice(),settings:{}},k;
   for(k in DEF.settings)o.settings[k]=DEF.settings[k];
   if(!d||typeof d!=='object')return o;
   if(d.people&&d.people.length!==undefined){
@@ -166,13 +179,14 @@ function norm(d){
       return {name:p.name,bday:p.bday||'',partner:p.partner||'',children:p.children||[],siblings:p.siblings||[],photos:[slotList(ph[0]),slotList(ph[1]),slotList(ph[2])]};
     });
   }
+  if(d.diffs&&d.diffs.length)o.diffs=d.diffs;
   if(d.questions&&d.questions.length)o.questions=d.questions;
   if(d.themes&&d.themes.length)o.themes=d.themes;
   if(d.routine&&d.routine.length)o.routine=d.routine;
   var s=d.settings||{};
   for(k in DEF.settings){if(s[k]!==undefined)o.settings[k]=s[k]}
-  if(s.v!==4){o.settings.pairs=6;o.settings.showNames=false}
-  o.settings.v=4;
+  if(s.v!==5){o.settings.pairs=Math.max(6,toInt(o.settings.pairs)||6);o.settings.showNames=false}
+  o.settings.v=5;
   return o;
 }
 
@@ -213,6 +227,9 @@ function saveData(cb){
 
 /* ================= elementos comunes de pantalla ================= */
 var msgT=null;
+var CHEER=['¡Muy bien!','¡Eso es!','¡Qué bien lo haces!','¡Perfecto!','¡Estupendo!','¡Así se hace!','¡Fenomenal!','¡Lo has encontrado!','¡Muy bien, Celia!','¡Genial!'];
+var lastCh=-1;
+function cheer(){var i;do{i=Math.floor(Math.random()*CHEER.length)}while(i===lastCh&&CHEER.length>1);lastCh=i;return CHEER[i]}
 function msg(t,ms){var m=byId('msg');if(!m)return;m.innerHTML=t;if(msgT)clearTimeout(msgT);msgT=later(function(){m.innerHTML=''},ms||1800)}
 function overlay(text,buttons,small){
   var o=el('div','ov');
@@ -267,7 +284,9 @@ function home(){
     {t:'Parejas',i:'🃏',c:'#1F4E79',f:function(){go(menuParejas)}},
     {t:'Sopa de letras',i:'🔤',c:'#2E7D32',f:function(){go(menuSopa)}},
     {t:'Preguntas',i:'❓',c:'#6A1B9A',f:function(){go(preguntas)}},
-    {t:'Horas',i:'🕐',c:'#BF360C',f:function(){go(menuHoras)}}
+    {t:'Horas',i:'🕐',c:'#BF360C',f:function(){go(menuHoras)}},
+    {t:'Busca el objeto',i:'🔍',c:'#00838F',f:function(){go(busca)}},
+    {t:'Diferencias',i:'👀',c:'#AD1457',f:function(){go(diferencias)}}
   ],false,true);
 }
 function menuParejas(){
@@ -275,14 +294,7 @@ function menuParejas(){
     {t:'Memoria',i:'👀',c:'#1F4E79',f:function(){go(memoria)}},
     {t:'Antes y ahora',i:'👶',c:'#00695C',f:function(){go(antesAhora)}},
     {t:'Cumpleaños',i:'🎂',c:'#AD1457',f:function(){go(cumples)}},
-    {t:'Familia',i:'👪',c:'#E65100',f:function(){go(menuFamilia)}}
-  ],true);
-}
-function menuFamilia(){
-  menuScreen('Familia',[
-    {t:'Marido y mujer',i:'💑',c:'#AD1457',f:function(){go(function(){familia('pareja')})}},
-    {t:'Padres e hijos',i:'👪',c:'#E65100',f:function(){go(function(){familia('hijos')})}},
-    {t:'Hermanos',i:'👫',c:'#00695C',f:function(){go(function(){familia('hermanos')})}}
+    {t:'¿Quiénes son...?',i:'👪',c:'#E65100',f:function(){go(quienes)}}
   ],true);
 }
 function menuSopa(){
@@ -322,18 +334,19 @@ function curPhoto(p){var l=curList(p);return l.length?rnd(l):null}
 function kidPhoto(p){return p.photos[2].length?rnd(p.photos[2]):null}
 function needPhotos(){noData('Todavía faltan fotos para este juego. Se cargan desde el panel de ajustes (mantén pulsado el engranaje del menú).')}
 
-function setupBoard(title,total){
+function setupBoard(title,total,qline){
   clear();
   var d=dims(),M=10,s=el('div','screen');
-  s.innerHTML=topbar(title)+'<div id="board"></div>';
+  s.innerHTML=topbar(title)+(qline?'<div id="qq" class="qq"></div>':'')+'<div id="board"></div>';
   app.appendChild(s);wireBack();
-  var g=bestGrid(total,d.W*0.94,d.H*0.76,M),size=Math.max(60,Math.min(g.s,340)),board=byId('board');
+  var g=bestGrid(total,d.W*0.94,d.H*(qline?0.62:0.76),M),size=Math.max(60,Math.min(g.s,340)),board=byId('board');
   board.style.width=(g.c*(size+2*M))+'px';board.style.margin='0 auto';
   return {size:size,M:M,board:board};
 }
 function makeNode(b,i,card,faceDown,onClick){
   var n=el('div','card '+(faceDown?'down':'up')),inner=b.size-12;
   n.style.width=n.style.height=b.size+'px';n.style.margin=b.M+'px';
+  n.style.fontSize=Math.round(b.size*0.55)+'px';
   n.innerHTML='<div class="cb" style="font-size:'+Math.round(b.size*0.5)+'px;line-height:'+inner+'px">?</div><div class="cf">'+card.build(b.size)+'</div>';
   n.onclick=function(){onClick(i)};
   b.board.appendChild(n);
@@ -360,7 +373,7 @@ function flipGame(title,cards,again){
     if(cards[a].id===cards[bb].id){
       later(function(){
         cards[a].done=cards[bb].done=true;setC(a,'done');setC(bb,'done');
-        open=[];lock=false;fails=0;matched++;msg('¡Muy bien!',1500);
+        open=[];lock=false;fails=0;matched++;msg(cheer(),1800);
         if(matched===n)endScreen(again);
       },700);
     }else{
@@ -424,7 +437,7 @@ function matchGame(title,pairs,validFn,again){
     if(ok(a,i)){
       later(function(){
         cards[a].done=cards[i].done=true;setC(a,'done');setC(i,'done');
-        sel=null;locked=false;fails=0;msg('¡Muy bien!',1500);
+        sel=null;locked=false;fails=0;msg(cheer(),1800);
         if(!anyLeft())endScreen(again);
       },600);
     }else{
@@ -453,37 +466,89 @@ function cumples(){
     return {a:{build:photoCard(curPhoto(p),p.name)},b:{build:dateCard(p.bday)}};
   }),null,cumples);
 }
-function familia(kind){
-  var rel={pareja:{},hijos:{},hermanos:{}};
-  function add(k,a,b){a=cleanWord(a);b=cleanWord(b);if(!a||!b||a===b)return;rel[k][a+'|'+b]=1;rel[k][b+'|'+a]=1}
+/* --- ¿Quiénes son...? : pregunta + elegir las fotos correctas --- */
+function relData(){
+  var R={pareja:{},hijos:{},hermanos:{}},par={},byKey={};
+  function add(k,a,b){a=cleanWord(a);b=cleanWord(b);if(!a||!b||a===b)return;R[k][a+'|'+b]=1;R[k][b+'|'+a]=1}
   data.people.forEach(function(p){
+    var ka=cleanWord(p.name);
     if(p.partner)add('pareja',p.name,p.partner);
-    (p.children||[]).forEach(function(c){add('hijos',p.name,c)});
+    (p.children||[]).forEach(function(c){add('hijos',p.name,c);(par[cleanWord(c)]=par[cleanWord(c)]||[]).push(ka)});
     (p.siblings||[]).forEach(function(c){add('hermanos',p.name,c)});
+    if(curList(p).length)byKey[ka]=p;
   });
-  var byKey={},cands=[];
-  data.people.forEach(function(p){if(curList(p).length)byKey[cleanWord(p.name)]=p});
-  data.people.forEach(function(p){
-    var ka=cleanWord(p.name);if(!byKey[ka])return;
-    var others=kind==='pareja'?(p.partner?[p.partner]:[]):(kind==='hijos'?(p.children||[]):(p.siblings||[]));
-    others.forEach(function(o){
-      var kb=cleanWord(o);
-      if(!byKey[kb]||kb===ka)return;
-      if(kind!=='hijos'&&ka>kb)return;
-      cands.push([ka,kb]);
+  return {R:R,par:par,byKey:byKey};
+}
+function quienes(){
+  var rd=relData(),keys=[],i;
+  for(var k in rd.byKey)keys.push(k);
+  if(keys.length<4){needPhotos();return}
+  var R=rd.R,byKey=rd.byKey;
+  function nameOf(k){var p=null;data.people.forEach(function(x){if(cleanWord(x.name)===k)p=x});return p?p.name.charAt(0)+p.name.slice(1).toLowerCase():k}
+  function isRel(kind,a,b){return !!R[kind][a+'|'+b]}
+  function listOf(kind,x){var o=[];for(var j=0;j<keys.length;j++)if(keys[j]!==x&&isRel(kind,x,keys[j]))o.push(keys[j]);return o}
+  var PSZ=Math.min(6,keys.length),cands=[];
+  function others(excl){return keys.filter(function(k){return excl.indexOf(k)<0})}
+  // generales
+  [['hermanos','¿Quiénes son hermanos?'],['pareja','¿Quiénes son marido y mujer?'],['hijos','¿Quiénes son padre/madre e hijo/a?']].forEach(function(g){
+    var kind=g[0],pairs=[];
+    keys.forEach(function(a){keys.forEach(function(b){if(a<b&&isRel(kind,a,b))pairs.push([a,b])})});
+    pairs.forEach(function(pr){
+      cands.push({text:g[1],build:function(){
+        for(var t=0;t<300;t++){
+          var panel=pr.concat(pick(others(pr),PSZ-2)),cnt=0,x,y;
+          for(x=0;x<panel.length;x++)for(y=x+1;y<panel.length;y++)if(isRel(kind,panel[x],panel[y]))cnt++;
+          if(cnt===1)return {ans:pr,panel:shuffle(panel)};
+        }
+        return null;
+      }});
     });
   });
-  var used={},chosen=[],n=clampInt(data.settings.pairs,2,8,6);
-  shuffle(cands).forEach(function(c){
-    if(chosen.length>=n||used[c[0]]||used[c[1]])return;
-    used[c[0]]=1;used[c[1]]=1;chosen.push(c);
+  // sobre una persona concreta
+  data.people.forEach(function(p){
+    var x=cleanWord(p.name);
+    [['pareja',listOf('pareja',x),function(n){return '¿Quién es la pareja de '+n+'?'}],
+     ['hijos',(function(){var o=[];listOf('hijos',x).forEach(function(c){if((rd.par[c]||[]).indexOf(x)>=0)o.push(c)});return o})(),function(n){return '¿Quiénes son los hijos de '+n+'?'}],
+     ['padres',(function(){var o=[];(rd.par[x]||[]).forEach(function(c){if(byKey[c])o.push(c)});return o})(),function(n){return '¿Quiénes son los padres de '+n+'?'}],
+     ['hermanos',listOf('hermanos',x),function(n){return '¿Quiénes son los hermanos de '+n+'?'}]].forEach(function(q){
+      var ans=q[1];
+      if(!ans.length||ans.length>3)return;
+      cands.push({text:q[2](nameOf(x)),build:function(){
+        var ex=ans.concat([x]);
+        // los distractores no pueden ser de la misma relación con esa persona
+        var rel=q[0]==='padres'?'hijos':q[0];
+        var pool=others(ex).filter(function(k){return !isRel(rel,x,k)});
+        if(pool.length<PSZ-ans.length)return null;
+        return {ans:ans,panel:shuffle(ans.concat(pick(pool,PSZ-ans.length)))};
+      }});
+    });
   });
-  if(chosen.length<2){needPhotos();return}
-  var titles={pareja:'Marido y mujer',hijos:'Padres e hijos',hermanos:'Hermanos'};
-  matchGame(titles[kind],chosen.map(function(c){
-    var pa=byKey[c[0]],pb=byKey[c[1]];
-    return {a:{key:c[0],build:photoCard(curPhoto(pa),pa.name)},b:{key:c[1],build:photoCard(curPhoto(pb),pb.name)}};
-  }),function(x,y){return !!rel[kind][x.key+'|'+y.key]},function(){familia(kind)});
+  if(!cands.length){needPhotos();return}
+  var rounds=pick(cands,Math.min(5,cands.length)),qi=0,shown=0;
+  function round(){
+    var q=null,c=null;
+    while(qi<rounds.length&&!q){c=rounds[qi];q=c.build();if(!q)qi++}
+    if(!q){if(!shown){needPhotos();return}endScreen(quienes);return}
+    shown++;
+    var b=setupBoard('¿Quiénes son...?',q.panel.length,true),nodes=[],fails=0,left=q.ans.length,done={};
+    byId('qq').innerHTML=esc(c.text)+' <span style="font-size:.7em;color:#555">(pulsa '+q.ans.length+(q.ans.length===1?' foto':' fotos')+')</span>';
+    q.panel.forEach(function(k,i){
+      nodes.push(makeNode(b,i,{build:photoCard(curPhoto(byKey[k]),'')},false,function(i){
+        var key=q.panel[i];
+        if(done[key])return;
+        if(q.ans.indexOf(key)>=0){
+          done[key]=true;nodes[i].className='card done';left--;fails=0;
+          msg(cheer(),1800);
+          if(left===0){qi++;later(round,1900)}
+        }else{
+          fails++;nodes[i].className='card wrong';msg('Casi. Prueba otra vez',1600);
+          later(function(){if(!done[key])nodes[i].className='card up'},900);
+          if(fails>=3){fails=0;q.ans.forEach(function(a){var j=q.panel.indexOf(a);if(!done[a]){nodes[j].className='card up hint';later(function(){if(!done[a])nodes[j].className='card up'},2600)}})}
+        }
+      }));
+    });
+  }
+  round();
 }
 
 /* ================= sopa de letras ================= */
@@ -495,16 +560,16 @@ function tryGrid(keys,N,overlap){
   for(w=0;w<order.length;w++){
     var word=order[w],placed=false;
     for(t=0;t<80&&!placed;t++){
-      var dir=Math.random()<0.5?'H':'V';
-      var maxr=dir==='V'?N-word.length:N-1,maxc=dir==='H'?N-word.length:N-1;
+      var rd_=Math.random(),dir=rd_<0.34?'H':(rd_<0.66?'V':'D');
+      var maxr=(dir==='V'||dir==='D')?N-word.length:N-1,maxc=(dir==='H'||dir==='D')?N-word.length:N-1;
       var r=Math.floor(Math.random()*(maxr+1)),c=Math.floor(Math.random()*(maxc+1)),ok=true,fresh=0,rr,cc,cell;
       for(k=0;k<word.length;k++){
-        rr=dir==='V'?r+k:r;cc=dir==='H'?c+k:c;cell=g[rr][cc];
+        rr=(dir==='V'||dir==='D')?r+k:r;cc=(dir==='H'||dir==='D')?c+k:c;cell=g[rr][cc];
         if(cell===''){fresh++}
         else if(!overlap||cell!==word.charAt(k)){ok=false;break}
       }
       if(ok&&fresh>0){
-        for(k=0;k<word.length;k++){rr=dir==='V'?r+k:r;cc=dir==='H'?c+k:c;g[rr][cc]=word.charAt(k)}
+        for(k=0;k<word.length;k++){rr=(dir==='V'||dir==='D')?r+k:r;cc=(dir==='H'||dir==='D')?c+k:c;g[rr][cc]=word.charAt(k)}
         place[word]={r:r,c:c,dir:dir};placed=true;
       }
     }
@@ -516,7 +581,7 @@ function tryGrid(keys,N,overlap){
 function buildGrid(keys){
   var total=0,longest=0,i;
   for(i=0;i<keys.length;i++){total+=keys[i].length;if(keys[i].length>longest)longest=keys[i].length}
-  var N0=Math.max(6,longest,Math.ceil(Math.sqrt(total/0.62))),N,t,r;
+  var N0=Math.max(6,longest,Math.ceil(Math.sqrt(total/0.70))),N,t,r;
   for(N=N0;N<=N0+3;N++){
     for(t=0;t<50;t++){r=tryGrid(keys,N,false);if(r)return r}
     for(t=0;t<80;t++){r=tryGrid(keys,N,true);if(r)return r}
@@ -584,11 +649,14 @@ function sopa(ti){
   }
   function setRange(cells,on){for(var i=0;i<cells.length;i++){flags[cells[i][0]][cells[i][1]].s=on;paint(cells[i][0],cells[i][1])}}
   function lineCells(a,b,snap){
-    var dr=b.r-a.r,dc=b.c-a.c;
-    if(snap){if(Math.abs(dr)>=Math.abs(dc))dc=0;else dr=0}
-    else if(dr!==0&&dc!==0)return null;
-    var n=Math.max(Math.abs(dr),Math.abs(dc))+1,sr=dr===0?0:(dr>0?1:-1),sc=dc===0?0:(dc>0?1:-1),out=[],i;
-    for(i=0;i<n;i++)out.push([a.r+sr*i,a.c+sc*i]);
+    var dr=b.r-a.r,dc=b.c-a.c,ar=Math.abs(dr),ac=Math.abs(dc),i;
+    if(snap){
+      if(ar>=2*ac)dc=0;
+      else if(ac>=2*ar)dr=0;
+      else{var m=Math.max(ar,ac);dr=(dr<0?-1:1)*m;dc=(dc<0?-1:1)*m}
+    }else if(dr!==0&&dc!==0&&ar!==ac)return null;
+    var n=Math.max(Math.abs(dr),Math.abs(dc))+1,sr=dr===0?0:(dr>0?1:-1),sc=dc===0?0:(dc>0?1:-1),out=[],rr,cc;
+    for(i=0;i<n;i++){rr=a.r+sr*i;cc=a.c+sc*i;if(rr<0||cc<0||rr>=N||cc>=N)break;out.push([rr,cc])}
     return out;
   }
   function check(cells){
@@ -600,7 +668,7 @@ function sopa(ti){
       found[hit.key]=true;count++;
       for(i=0;i<cells.length;i++){flags[cells[i][0]][cells[i][1]].f=true;paint(cells[i][0],cells[i][1])}
       wordNodes[hit.key].className='w ok';wordNodes[hit.key].innerHTML='✔ '+esc(hit.show);
-      msg('¡Muy bien!',1500);
+      msg(cheer(),1800);
       if(count===list.length)endScreen(function(){sopa(ti)});
     }else if(cells.length>1){
       msg('Casi. Prueba otra vez',1800);
@@ -619,7 +687,7 @@ function sopa(ti){
     if(anchor.r===p.r&&anchor.c===p.c){clearAnchor();return}
     var cells=lineCells(anchor,p,false);
     clearAnchor();
-    if(!cells){anchor=p;flags[p.r][p.c].s=true;paint(p.r,p.c);msg('Elige dos letras en la misma fila o columna',2200);return}
+    if(!cells){anchor=p;flags[p.r][p.c].s=true;paint(p.r,p.c);msg('Elige dos letras en línea recta: fila, columna o diagonal',2600);return}
     check(cells);
   }
   function onDown(x,y){var p=cellAt(x,y);if(!p)return;down=p;moved=false;clearDrag()}
@@ -645,6 +713,115 @@ function sopa(ti){
   }else{
     grid.onclick=function(e){var p=cellAt(e.clientX,e.clientY);if(p)tap(p)};
   }
+}
+
+/* ================= busca el objeto ================= */
+var OBJS=[['🌂','el paraguas'],['🔑','la llave'],['👓','las gafas'],['⏰','el despertador'],['🎩','el sombrero'],['👞','el zapato'],['👜','el bolso'],
+['🌸','la flor'],['🌻','el girasol'],['🍎','la manzana'],['🍐','la pera'],['🍌','el plátano'],['🍇','las uvas'],['🍅','el tomate'],['🍞','el pan'],
+['☕','la taza de café'],['🍷','la copa'],['🎈','el globo'],['🎁','el regalo'],['⚽','el balón'],['🎸','la guitarra'],['🚗','el coche'],['🚲','la bicicleta'],
+['🏠','la casa'],['⛪','la iglesia'],['🐶','el perro'],['🐱','el gato'],['🐔','la gallina'],['🐑','la oveja'],['🐷','el cerdo'],['🐟','el pez'],['🐢','la tortuga'],
+['🐝','la abeja'],['🌳','el árbol'],['🌷','el tulipán'],['🍀','el trébol'],['🌽','el maíz'],['🔔','la campana'],['📞','el teléfono'],['📺','la televisión'],
+['📻','la radio'],['💡','la bombilla'],['🔨','el martillo'],['🔧','la llave inglesa'],['📖','el libro'],['💍','el anillo'],['⌚','el reloj'],['👕','la camiseta'],
+['👖','el pantalón'],['👗','el vestido'],['👒','el sombrero de paja'],['🍪','la galleta'],['🍬','el caramelo'],['🍰','la tarta'],['🎹','el piano'],['🔦','la linterna'],
+['🚪','la puerta'],['👠','el zapato de tacón'],['🍄','la seta'],['🍒','las cerezas'],['🍓','la fresa'],['🍉','la sandía'],['🍋','el limón'],['🍊','la naranja'],
+['🍳','la sartén'],['🌙','la luna'],['🌈','el arco iris'],['🎂','la tarta de cumpleaños'],['📷','la cámara de fotos'],['💰','la bolsa de dinero'],['🔒','el candado'],
+['⛵','el barco'],['🚌','el autobús'],['🏰','el castillo'],['🐴','el caballo'],['🐮','la vaca'],['🐸','la rana'],['🐘','el elefante'],['🐦','el pájaro']];
+function busca(){
+  clear();
+  var d=dims(),s=el('div','screen'),N=d.land?36:30;
+  s.innerHTML=topbar('Busca el objeto')+'<div id="qq" class="qq"></div><div id="scene" class="scene"></div>';
+  app.appendChild(s);wireBack();
+  var sw=Math.floor(d.W*0.96),sh=Math.floor(d.H*(d.land?0.66:0.70)),sc=byId('scene');
+  sc.style.width=sw+'px';sc.style.height=sh+'px';
+  var rows=Math.max(2,Math.round(Math.sqrt(N*sh/sw))),cols=Math.ceil(N/rows),cw=sw/cols,ch=sh/rows,cells=[],r,c;
+  for(r=0;r<rows;r++)for(c=0;c<cols;c++)cells.push([r,c]);
+  cells=pick(cells,Math.min(N,cells.length));
+  var objs=pick(OBJS,cells.length),fs=Math.floor(Math.min(cw,ch)*0.80),nodes=[];
+  objs.forEach(function(o,i){
+    var n=el('div','ob',o[0]),cell=cells[i],jx=(Math.random()-0.5)*cw*0.18,jy=(Math.random()-0.5)*ch*0.18;
+    n.style.width=cw+'px';n.style.height=ch+'px';n.style.left=Math.round(cell[1]*cw+jx)+'px';n.style.top=Math.round(cell[0]*ch+jy)+'px';
+    n.style.fontSize=fs+'px';n.style.lineHeight=ch+'px';
+    n.style.webkitTransform=n.style.transform='rotate('+Math.round((Math.random()-0.5)*24)+'deg)';
+    sc.appendChild(n);nodes.push(n);
+  });
+  var targets=pick(objs.map(function(o,i){return i}),Math.min(5,objs.length)),ti=0,fails=0,showPic=String(data.settings.objpic)!=='0';
+  function ask(){
+    var o=objs[targets[ti]];
+    byId('qq').innerHTML='Busca '+(showPic?'<span style="font-size:1.3em">'+o[0]+'</span> ':'')+'<span style="color:#BF360C">'+esc(o[1])+'</span> <span style="font-size:.6em;color:#777">('+(ti+1)+' de '+targets.length+')</span>';
+  }
+  nodes.forEach(function(n,i){
+    n.onclick=function(){
+      if(ti>=targets.length||n.className.indexOf('found')>=0)return;
+      if(i===targets[ti]){
+        n.className='ob found';fails=0;ti++;msg(cheer(),1500);
+        for(var j=0;j<nodes.length;j++)if(nodes[j].className.indexOf('hint')>=0)nodes[j].className='ob';
+        if(ti>=targets.length)endScreen(busca);else ask();
+      }else{
+        fails++;msg('Casi. Sigue buscando',1500);
+        if(fails>=3){fails=0;var t=nodes[targets[ti]];t.className='ob hint';later(function(){if(t.className.indexOf('found')<0)t.className='ob'},3000)}
+      }
+    };
+  });
+  ask();
+}
+
+/* ================= las diferencias ================= */
+var lastDiff=-1;
+function diferencias(){
+  var L=data.diffs||[];
+  if(!L.length){noData('Todavía no hay fotos para este juego. Se cargan desde el panel de ajustes (mantén pulsado el engranaje del menú).');return}
+  var di;
+  do{di=Math.floor(Math.random()*L.length)}while(L.length>1&&di===lastDiff);
+  lastDiff=di;
+  var D=L[di],V=D.vars[Math.floor(Math.random()*D.vars.length)];
+  clear();
+  var d=dims(),s=el('div','screen');
+  s.innerHTML=topbar('Diferencias')+'<div id="qq" class="qq"></div><div id="dbox" style="text-align:center"></div>';
+  app.appendChild(s);wireBack();
+  var ar=D.h/D.w,box=byId('dbox'),availH=d.H*0.70,availW=d.W*0.92,w;
+  if(d.land)w=Math.floor(Math.min(availW/2-24,(availH-8)/ar+0));else w=Math.floor(Math.min(availW-16,(availH/2)/ar-16));
+  w=Math.max(120,w);
+  var left=V.spots.length,found=[],wraps=[],svgs=[],fails=0;
+  function mk(src){
+    var wr=el('div','dwrap');wr.style.width=w+'px';
+    wr.innerHTML='<img src="'+src+'" alt=""><svg viewBox="0 0 100 '+(100*ar).toFixed(2)+'" preserveAspectRatio="none"></svg>';
+    box.appendChild(wr);wraps.push(wr);svgs.push(wr.getElementsByTagName('svg')[0]);
+    return wr;
+  }
+  mk(D.a);mk(V.b);
+  if(!d.land){wraps.forEach(function(x){x.style.display='block';x.style.margin='6px auto'})}
+  function say_(){byId('qq').innerHTML='Busca las diferencias. Quedan: <span style="color:#BF360C">'+left+'</span>'}
+  function ring(i,cls,col){
+    var sp=V.spots[i],NS='http://www.w3.org/2000/svg',out=[];
+    svgs.forEach(function(sv){
+      var c=document.createElementNS(NS,'circle');
+      c.setAttribute('cx',(sp[0]*100).toFixed(2));c.setAttribute('cy',(sp[1]*100*ar).toFixed(2));c.setAttribute('r',(Math.max(sp[2],0.035)*100).toFixed(2));
+      c.setAttribute('fill','none');c.setAttribute('stroke',col);c.setAttribute('stroke-width','1.1');
+      if(cls)c.setAttribute('class',cls);
+      sv.appendChild(c);out.push(c);
+    });
+    return out;
+  }
+  function onTap(e,wr){
+    if(left<=0)return;
+    var rc=wr.getBoundingClientRect(),x=(e.clientX-rc.left)/rc.width,y=(e.clientY-rc.top)/rc.height*(rc.height/rc.width)/ar*1;
+    // y relativo en unidades de ancho normalizado a la imagen: y_img = (clientY-top)/width
+    var yy=(e.clientY-rc.top)/rc.width,best=-1,bd=1e9,i;
+    for(i=0;i<V.spots.length;i++){
+      if(found[i])continue;
+      var sp=V.spots[i],dx=x-sp[0],dy=yy-sp[1]*ar,dist=Math.sqrt(dx*dx+dy*dy),R=Math.max(sp[2],0.035)*1.6;
+      if(dist<R&&dist<bd){bd=dist;best=i}
+    }
+    if(best>=0){
+      found[best]=true;left--;fails=0;ring(best,'','#2E7D32');say_();msg(cheer(),1600);
+      if(left===0)endScreen(diferencias);
+    }else{
+      fails++;msg('Casi. Sigue mirando',1400);
+      if(fails>=4){fails=0;for(var j=0;j<V.spots.length;j++)if(!found[j]){(function(cs){cs.forEach(function(c){c.setAttribute('class','dpulse')});later(function(){cs.forEach(function(c){if(c.parentNode)c.parentNode.removeChild(c)})},3000)})(ring(j,'dpulse','#E65100'));break}}
+    }
+  }
+  wraps.forEach(function(wr){wr.onclick=function(e){onTap(e,wr)}});
+  say_();
 }
 
 /* ================= preguntas ================= */
@@ -879,6 +1056,7 @@ function admin(){
   h+=selHtml('s_memo','Memoria: la pareja son:',[['distintas','Dos fotos distintas de la misma persona (difícil)'],['iguales','La misma foto repetida (fácil)']],st.memo);
   h+=selHtml('s_wpg','Palabras por sopa de letras:',[[3,'3'],[4,'4'],[5,'5'],[6,'6'],[7,'7'],[8,'8'],[9,'9'],[10,'10']],st.wpg);
   h+=selHtml('s_qn','Preguntas por partida:',[[5,'5'],[10,'10'],[15,'15'],[20,'20'],[60,'Todas']],st.qn);
+  h+=selHtml('s_objpic','Busca el objeto: enseñar también el dibujo:',[['1','Sí (más fácil)'],['0','No, solo el nombre']],st.objpic);
   h+=selHtml('s_hl','Horas, nivel:',[[1,'1 - horas muy distintas'],[2,'2 - incluye la misma hora de mañana y de noche']],st.hlevel);
   h+='<p class="small">Preguntas, palabras y rutina se cambian en el Excel y se vuelven a generar con generar_datos.py.</p>';
   s.innerHTML=h;app.appendChild(s);
@@ -886,9 +1064,9 @@ function admin(){
   function say(id,t){byId(id).innerHTML=t}
 
   function summary(){
-    var np=data.people.length,nf=0,i,j;
+    var np=data.people.length,nf=0,i,j,nd=(data.diffs||[]).length;
     for(i=0;i<np;i++)for(j=0;j<3;j++)nf+=data.people[i].photos[j].length;
-    say('sum',np+' personas · '+nf+' fotos cargadas  · '+data.questions.length+' preguntas · '+data.themes.length+' temas de sopa · '+data.routine.length+' actividades de rutina');
+    say('sum',np+' personas · '+nf+' fotos cargadas  · '+data.questions.length+' preguntas · '+data.themes.length+' temas de sopa · '+data.routine.length+' actividades de rutina · '+nd+' fotos de diferencias');
   }
   function drawList(){
     var out='',i,j;
@@ -965,7 +1143,7 @@ function admin(){
   };
   function bind(id,key,conv){byId(id).onchange=function(){data.settings[key]=conv(this.value);saveData()}}
   bind('s_pairs','pairs',toInt);bind('s_prev','preview',toInt);bind('s_memo','memo',String);
-  bind('s_wpg','wpg',toInt);bind('s_qn','qn',toInt);bind('s_hl','hlevel',toInt);
+  bind('s_wpg','wpg',toInt);bind('s_qn','qn',toInt);bind('s_hl','hlevel',toInt);bind('s_objpic','objpic',String);
 }
 
 /* ================= arranque ================= */

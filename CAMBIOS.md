@@ -8,5 +8,15 @@
 - Nunca se muestra el nombre en las cartas de fotos (v3).
 - Cache del servicio: juegos-madre-v4.
 
+## v5 (2 oct 2026)
+- Sopa de letras: palabras en horizontal, vertical y diagonal (siempre izquierda->derecha o arriba->abajo). Tableros más compactos. Se puede arrastrar o tocar inicio y fin.
+- Parejas: fotos sin recortar (se ve la foto entera); carta acertada atenuada con tic verde; mensajes de ánimo variados al acertar.
+- Quitados "Marido y mujer", "Padres e hijos" y "Hermanos". Nuevo "¿Quiénes son...?" (Parejas): pregunta + panel de 6 fotos, solo valen las respuestas correctas.
+- Juego nuevo "Busca el objeto" (sin datos): 30-36 objetos, 5 por partida, pista tras 3 fallos.
+- Juego nuevo "Diferencias": 13 fotos x 3 versiones x 7 diferencias (en el JSON privado, panel: fotos de diferencias).
+- Ajustes: parejas mínimo 6; nuevo ajuste "Busca el objeto: dibujos".
+- Disposición de Parejas: se mantiene la que mejor encaja en pantalla (no se fuerza vertical/horizontal por dispositivo).
+- Cache del servicio: juegos-madre-v5.
+
 ## Pendiente de la revisión de César
-(Anotar aquí lo que vaya encontrando al probar todos los juegos.)
+(Anotar aquí lo que vaya encontrando al probar todos los juegos en la tablet.)
