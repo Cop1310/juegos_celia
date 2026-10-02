@@ -136,7 +136,7 @@ function cleanWord(s){
 
 /* ================= datos por defecto (genéricos, sin nada personal) ================= */
 var DEF={
-  settings:{pairs:3,preview:3,showNames:false,memo:'distintas',wpg:10,qn:10,hlevel:1},
+  settings:{v:4,pairs:6,preview:3,showNames:false,memo:'distintas',wpg:10,qn:10,hlevel:1},
   themes:[
     {name:'LA CASA',words:['CASA','MESA','SILLA','CAMA','COCINA','VENTANA','PUERTA','SOFA','LAMPARA','ARMARIO','ESPEJO','BALCON']},
     {name:'FRUTAS',words:['MANZANA','PERA','NARANJA','LIMON','UVAS','CEREZAS','PLATANO','FRESA','MELON','SANDIA','CIRUELA','MELOCOTON']}
@@ -153,6 +153,9 @@ var DEF={
     {name:'Cenar',q:'¿A qué hora se cena?',note:'',h:21,m:0,icon:'🌙'}
   ]
 };
+function slotList(v){if(!v)return [];if(typeof v==='string')return [v];var o=[],i;for(i=0;i<v.length;i++)if(v[i])o.push(v[i]);return o}
+function curList(p){return p.photos[0].concat(p.photos[1])}
+function rnd(a){return a[Math.floor(Math.random()*a.length)]}
 function norm(d){
   var o={people:[],questions:DEF.questions.slice(),themes:DEF.themes.slice(),routine:DEF.routine.slice(),settings:{}},k;
   for(k in DEF.settings)o.settings[k]=DEF.settings[k];
@@ -160,7 +163,7 @@ function norm(d){
   if(d.people&&d.people.length!==undefined){
     o.people=d.people.map(function(p){
       var ph=p.photos||[];
-      return {name:p.name,bday:p.bday||'',partner:p.partner||'',children:p.children||[],siblings:p.siblings||[],photos:[ph[0]||null,ph[1]||null,ph[2]||null]};
+      return {name:p.name,bday:p.bday||'',partner:p.partner||'',children:p.children||[],siblings:p.siblings||[],photos:[slotList(ph[0]),slotList(ph[1]),slotList(ph[2])]};
     });
   }
   if(d.questions&&d.questions.length)o.questions=d.questions;
@@ -168,6 +171,8 @@ function norm(d){
   if(d.routine&&d.routine.length)o.routine=d.routine;
   var s=d.settings||{};
   for(k in DEF.settings){if(s[k]!==undefined)o.settings[k]=s[k]}
+  if(s.v!==4){o.settings.pairs=6;o.settings.showNames=false}
+  o.settings.v=4;
   return o;
 }
 
@@ -313,7 +318,8 @@ function dateCard(txt){
       '<div style="font-size:'+Math.round(size*0.12)+'px;font-weight:bold">'+esc(m[2])+'</div></div>';
   };
 }
-function curPhoto(p){return p.photos[0]||p.photos[1]||null}
+function curPhoto(p){var l=curList(p);return l.length?rnd(l):null}
+function kidPhoto(p){return p.photos[2].length?rnd(p.photos[2]):null}
 function needPhotos(){noData('Todavía faltan fotos para este juego. Se cargan desde el panel de ajustes (mantén pulsado el engranaje del menú).')}
 
 function setupBoard(title,total){
@@ -380,11 +386,11 @@ function flipGame(title,cards,again){
 }
 function memoria(){
   var st=data.settings,iguales=st.memo==='iguales';
-  var el_=data.people.filter(function(p){return iguales?(p.photos[0]||p.photos[1]):(p.photos[0]&&p.photos[1])});
+  var el_=data.people.filter(function(p){return iguales?(curList(p).length>=1):(curList(p).length>=2)});
   if(el_.length<2){needPhotos();return}
-  var n=Math.min(clampInt(st.pairs,2,6,3),el_.length),cards=[];
+  var n=Math.min(clampInt(st.pairs,2,8,6),el_.length),cards=[];
   pick(el_,n).forEach(function(p){
-    var a=p.photos[0]||p.photos[1],b=iguales?a:p.photos[1];
+    var l=shuffle(curList(p)),a=l[0],b=iguales?a:l[1];
     cards.push({id:p.name,build:photoCard(a,p.name)});
     cards.push({id:p.name,build:photoCard(b,p.name)});
   });
@@ -432,17 +438,17 @@ function matchGame(title,pairs,validFn,again){
   for(i=0;i<total;i++)nodes.push(makeNode(b,i,cards[i],false,onCard));
 }
 function antesAhora(){
-  var el_=data.people.filter(function(p){return p.photos[2]&&curPhoto(p)});
+  var el_=data.people.filter(function(p){return p.photos[2].length&&curList(p).length});
   if(el_.length<2){needPhotos();return}
-  var n=Math.min(clampInt(data.settings.pairs,2,6,3),el_.length);
+  var n=Math.min(clampInt(data.settings.pairs,2,8,6),el_.length);
   matchGame('Antes y ahora',pick(el_,n).map(function(p){
-    return {a:{build:photoCard(p.photos[2],p.name)},b:{build:photoCard(curPhoto(p),p.name)}};
+    return {a:{build:photoCard(kidPhoto(p),p.name)},b:{build:photoCard(curPhoto(p),p.name)}};
   }),null,antesAhora);
 }
 function cumples(){
-  var el_=data.people.filter(function(p){return p.bday&&curPhoto(p)});
+  var el_=data.people.filter(function(p){return p.bday&&curList(p).length});
   if(el_.length<2){needPhotos();return}
-  var n=Math.min(clampInt(data.settings.pairs,2,6,3),el_.length);
+  var n=Math.min(clampInt(data.settings.pairs,2,8,6),el_.length);
   matchGame('Cumpleaños',pick(el_,n).map(function(p){
     return {a:{build:photoCard(curPhoto(p),p.name)},b:{build:dateCard(p.bday)}};
   }),null,cumples);
@@ -456,7 +462,7 @@ function familia(kind){
     (p.siblings||[]).forEach(function(c){add('hermanos',p.name,c)});
   });
   var byKey={},cands=[];
-  data.people.forEach(function(p){if(curPhoto(p))byKey[cleanWord(p.name)]=p});
+  data.people.forEach(function(p){if(curList(p).length)byKey[cleanWord(p.name)]=p});
   data.people.forEach(function(p){
     var ka=cleanWord(p.name);if(!byKey[ka])return;
     var others=kind==='pareja'?(p.partner?[p.partner]:[]):(kind==='hijos'?(p.children||[]):(p.siblings||[]));
@@ -467,7 +473,7 @@ function familia(kind){
       cands.push([ka,kb]);
     });
   });
-  var used={},chosen=[],n=clampInt(data.settings.pairs,2,6,3);
+  var used={},chosen=[],n=clampInt(data.settings.pairs,2,8,6);
   shuffle(cands).forEach(function(c){
     if(chosen.length>=n||used[c[0]]||used[c[1]])return;
     used[c[0]]=1;used[c[1]]=1;chosen.push(c);
@@ -864,11 +870,11 @@ function admin(){
   h+='<div class="ahead"><button class="back" id="back">← Volver</button><span class="atitle">Panel de ajustes</span></div>';
   h+='<h2>Datos</h2><p class="small" id="sum"></p>';
   h+='<div class="box"><b>Importar archivo de datos (.json)</b><br><span class="small">Sustituye los datos actuales (personas, fotos, preguntas, palabras, rutina).</span><br><br><input type="file" id="imp" accept=".json,application/json"> <span id="imsg"></span></div>';
-  h+='<div class="box"><b>Cargar fotos por lote</b><br><span class="small">Nombre del archivo: NOMBRE_01.jpg, NOMBRE_02.jpg (actuales) y NOMBRE_03.jpg (de pequeño). El nombre debe coincidir con el de la persona.</span><br><br><input type="file" id="bfile" accept="image/*" multiple> <div id="bmsg" class="small"></div></div>';
+  h+='<div class="box"><b>Cargar fotos por lote</b><br><span class="small">Nombre del archivo: NOMBRE_01.jpg, NOMBRE_02.jpg (actuales) y NOMBRE_03.jpg (de pequeño). Si hay varias fotos del mismo tipo, añade una letra: NOMBRE_01a.jpg, NOMBRE_01b.jpg… (el juego elige una al azar cada vez). El nombre debe coincidir con el de la persona.</span><br><br><input type="file" id="bfile" accept="image/*" multiple> <div id="bmsg" class="small"></div></div>';
   h+='<div class="box"><b>Copia de seguridad</b><br><span class="small">Las fotos solo están en esta tablet. Si se borran los datos del navegador, se pierden.</span><br><br><button class="abtn" id="exp">Exportar copia</button> <span id="emsg"></span></div>';
   h+='<h2>Personas</h2><div id="plist"></div>';
   h+='<h2>Ajustes</h2>';
-  h+=selHtml('s_pairs','Parejas en cada partida:',[[2,'2'],[3,'3'],[4,'4'],[5,'5'],[6,'6']],st.pairs);
+  h+=selHtml('s_pairs','Parejas en cada partida:',[[3,'3 (6 cartas)'],[4,'4 (8 cartas)'],[5,'5 (10 cartas)'],[6,'6 (12 cartas, 3x4)'],[7,'7 (14 cartas)'],[8,'8 (16 cartas, 4x4)']],st.pairs);
   h+=selHtml('s_prev','Memoria: enseñar las cartas al empezar:',[[0,'No'],[3,'3 segundos'],[5,'5 segundos'],[8,'8 segundos']],st.preview);
   h+=selHtml('s_memo','Memoria: la pareja son:',[['distintas','Dos fotos distintas de la misma persona (difícil)'],['iguales','La misma foto repetida (fácil)']],st.memo);
   h+=selHtml('s_wpg','Palabras por sopa de letras:',[[3,'3'],[4,'4'],[5,'5'],[6,'6'],[7,'7'],[8,'8'],[9,'9'],[10,'10']],st.wpg);
@@ -881,8 +887,8 @@ function admin(){
 
   function summary(){
     var np=data.people.length,nf=0,i,j;
-    for(i=0;i<np;i++)for(j=0;j<3;j++)if(data.people[i].photos[j])nf++;
-    say('sum',np+' personas · '+nf+' fotos cargadas (de '+(np*3)+' posibles) · '+data.questions.length+' preguntas · '+data.themes.length+' temas de sopa · '+data.routine.length+' actividades de rutina');
+    for(i=0;i<np;i++)for(j=0;j<3;j++)nf+=data.people[i].photos[j].length;
+    say('sum',np+' personas · '+nf+' fotos cargadas  · '+data.questions.length+' preguntas · '+data.themes.length+' temas de sopa · '+data.routine.length+' actividades de rutina');
   }
   function drawList(){
     var out='',i,j;
@@ -890,7 +896,11 @@ function admin(){
       var p=data.people[i];
       out+='<div class="prow"><div class="pn"><b>'+esc(p.name)+'</b>'+(p.bday?' · '+esc(p.bday):'')+'</div>';
       for(j=0;j<3;j++){
-        out+='<div class="slot">'+(p.photos[j]?'<img src="'+p.photos[j]+'" alt=""><button class="abtn" data-i="'+i+'" data-s="'+j+'">↻ Girar</button>':'<div class="ph">—</div>')+'0'+(j+1)+'</div>';
+        var arr=p.photos[j],q;
+        out+='<div class="slot">';
+        if(!arr.length)out+='<div class="ph">—</div>';
+        for(q=0;q<arr.length;q++)out+='<div style="display:inline-block;margin:2px"><img src="'+arr[q]+'" alt=""><button class="abtn" data-i="'+i+'" data-s="'+j+'" data-q="'+q+'">↻ Girar</button></div>';
+        out+='0'+(j+1)+'</div>';
       }
       out+='</div>';
     }
@@ -902,7 +912,8 @@ function admin(){
     var t=e.target,i=t.getAttribute&&t.getAttribute('data-i');
     if(i===null||i===undefined)return;
     var sl=toInt(t.getAttribute('data-s')),p=data.people[toInt(i)];
-    rotate(p.photos[sl],function(u){p.photos[sl]=u;saveData(drawList)});
+    var qi=toInt(t.getAttribute('data-q'));
+    rotate(p.photos[sl][qi],function(u){p.photos[sl][qi]=u;saveData(drawList)});
   };
 
   byId('imp').onchange=function(){
@@ -923,7 +934,7 @@ function admin(){
     fr.readAsText(f);
   };
   byId('bfile').onchange=function(){
-    var files=Array.prototype.slice.call(this.files||[]),i=0,ok=0,bad=[];
+    var files=Array.prototype.slice.call(this.files||[]),i=0,ok=0,bad=[],touched={};
     if(!files.length)return;
     say('bmsg','Procesando 0/'+files.length+'…');
     (function next(){
@@ -934,11 +945,11 @@ function admin(){
         });
         return;
       }
-      var f=files[i++],m=/^(.*?)[\s_\-]*0?([1-3])\.[a-z0-9]+$/i.exec(f.name),p=null,k;
+      var f=files[i++],m=/^(.*?)[\s_\-]*0?([1-3])[a-z]?\.[a-z0-9]+$/i.exec(f.name),p=null,k;
       if(m){k=cleanWord(m[1]);data.people.forEach(function(x){if(cleanWord(x.name)===k)p=x})}
       if(!p){bad.push(f.name);next();return}
       resizeFile(f,700,function(u){
-        if(u){p.photos[toInt(m[2])-1]=u;ok++}else bad.push(f.name);
+        if(u){var sl_=toInt(m[2])-1,key_=p.name+'|'+sl_;if(!touched[key_]){touched[key_]=1;p.photos[sl_]=[]}p.photos[sl_].push(u);ok++}else bad.push(f.name);
         say('bmsg','Procesando '+i+'/'+files.length+'…');
         next();
       });

@@ -139,12 +139,15 @@ def main():
             sys.exit('Falta pillow: pip install pillow')
         index = {clean(p['name']): p for p in data['people']}
         for fn in sorted(os.listdir(folder)):
-            m = re.match(r'^(.*?)[\s_\-]*0?([1-3])\.(jpe?g|png|webp)$', fn, re.I)
+            m = re.match(r'^(.*?)[\s_\-]*0?([1-3])[a-z]?\.(jpe?g|png|webp)$', fn, re.I)
             p = index.get(clean(m.group(1))) if m else None
             if not p:
                 unmatched.append(fn)
                 continue
-            p['photos'][int(m.group(2)) - 1] = photo_data_url(os.path.join(folder, fn))
+            k = int(m.group(2)) - 1
+            if not isinstance(p['photos'][k], list):
+                p['photos'][k] = []
+            p['photos'][k].append(photo_data_url(os.path.join(folder, fn)))
             placed += 1
     with open(out, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False)
