@@ -728,7 +728,7 @@ var OBJS=[['🌂','el paraguas'],['🔑','la llave'],['👓','las gafas'],['⏰'
 ['⛵','el barco'],['🚌','el autobús'],['🏰','el castillo'],['🐴','el caballo'],['🐮','la vaca'],['🐸','la rana'],['🐘','el elefante'],['🐦','el pájaro']];
 function busca(){
   clear();
-  var d=dims(),s=el('div','screen'),N=d.land?36:30;
+  var d=dims(),s=el('div','screen'),N=d.land?74:64;
   s.innerHTML=topbar('Busca el objeto')+'<div id="qq" class="qq"></div><div id="scene" class="scene"></div>';
   app.appendChild(s);wireBack();
   var sw=Math.floor(d.W*0.96),sh=Math.floor(d.H*(d.land?0.66:0.70)),sc=byId('scene');
@@ -736,12 +736,12 @@ function busca(){
   var rows=Math.max(2,Math.round(Math.sqrt(N*sh/sw))),cols=Math.ceil(N/rows),cw=sw/cols,ch=sh/rows,cells=[],r,c;
   for(r=0;r<rows;r++)for(c=0;c<cols;c++)cells.push([r,c]);
   cells=pick(cells,Math.min(N,cells.length));
-  var objs=pick(OBJS,cells.length),fs=Math.floor(Math.min(cw,ch)*0.80),nodes=[];
+  var objs=pick(OBJS,cells.length),fs=Math.floor(Math.min(cw,ch)*0.92),nodes=[];
   objs.forEach(function(o,i){
-    var n=el('div','ob',o[0]),cell=cells[i],jx=(Math.random()-0.5)*cw*0.18,jy=(Math.random()-0.5)*ch*0.18;
+    var n=el('div','ob',o[0]),cell=cells[i],jx=(Math.random()-0.5)*cw*0.35,jy=(Math.random()-0.5)*ch*0.35;
     n.style.width=cw+'px';n.style.height=ch+'px';n.style.left=Math.round(cell[1]*cw+jx)+'px';n.style.top=Math.round(cell[0]*ch+jy)+'px';
     n.style.fontSize=fs+'px';n.style.lineHeight=ch+'px';
-    n.style.webkitTransform=n.style.transform='rotate('+Math.round((Math.random()-0.5)*24)+'deg)';
+    n.style.webkitTransform=n.style.transform='rotate('+Math.round((Math.random()-0.5)*40)+'deg)';
     sc.appendChild(n);nodes.push(n);
   });
   var targets=pick(objs.map(function(o,i){return i}),Math.min(5,objs.length)),ti=0,fails=0,showPic=String(data.settings.objpic)!=='0';
