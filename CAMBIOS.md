@@ -20,3 +20,14 @@
 
 ## Pendiente de la revisión de César
 (Anotar aquí lo que vaya encontrando al probar todos los juegos en la tablet.)
+
+## v6 (5 oct 2026)
+Aplicados A–N:
+- Girar la tablet ya no cambia ni reinicia el panel (Parejas, Sopa, Preguntas, Refranes, Raras, Sumas, Busca, Horas).
+- Quitados "Quién es quién" y "Diferencias" (no se podían generar diferencias limpias de objetos pequeños).
+- Nuevo: Sumas y restas (teclado 0-9, sumas hasta 3 sumandos y total ≤999, restas de 2 cifras).
+- Nuevo: Refranes y dichos (finales falsos inventados cambiando algo del correcto) y Palabras raras.
+- Sopa: título compacto, diagonales (≥2), menos palabras más largas, un color por palabra, COMIDAS Y BEBIDAS unidas, tema VARIADAS (~280 palabras).
+- Preguntas: colores variados, ánimo con "Celia".
+- Busca el objeto: 80-96 objetos, 10 objetivos, panel completo, ánimo.
+- Caché: juegos-madre-v6. Reimportar datos-juegos-v6.json en el panel oculto.
